@@ -132,15 +132,18 @@
     box-sizing: border-box;
   }
 
-  body {
-    font-family: Arial, sans-serif;
+  html, body {
     margin: 0;
     padding: 0;
-    background: #f9f9f9;
+    overflow-x: hidden; /* 🚫 Prevent horizontal scroll */
+    font-family: Arial, sans-serif;
+    background: #f8f9fa;
+  }
+
+  body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
     min-height: 100vh;
   }
 
@@ -148,29 +151,34 @@
     text-align: center;
     color: #222;
     padding: 15px;
-    margin-top: 10px;
+    font-size: 1.5rem;
+    margin: 10px 0;
   }
 
+  /* ✅ Center and contain PDF properly */
   #pdf-container {
-    width: 95%;
+    width: 100%;
     max-width: 900px;
+    margin: 0 auto;
     border: 1px solid #ddd;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     background: #fff;
-    margin-bottom: 15px;
-    border-radius: 6px;
+    border-radius: 8px;
     overflow: hidden;
   }
 
+  /* ✅ Canvas fits exactly, no overflow */
   canvas {
     display: block;
-    width: 100%;
-    height: auto;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 auto;
+    max-width: 100%;
   }
 
   .btns {
     text-align: center;
-    margin-bottom: 20px;
+    margin: 20px 0 30px;
   }
 
   button {
@@ -190,13 +198,20 @@
   }
 
   @media (max-width: 600px) {
+    h2#welcomeText {
+      font-size: 1.2rem;
+    }
     button {
       font-size: 0.9rem;
       padding: 8px 14px;
     }
+    #pdf-container {
+      width: 95%;
+    }
   }
 </style>
 </head>
+
 <body>
   <h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
   <div id="pdf-container"></div>
@@ -246,6 +261,7 @@
         const ctx = canvas.getContext("2d");
         canvas.width = scaledViewport.width;
         canvas.height = scaledViewport.height;
+
         container.innerHTML = "";
         container.appendChild(canvas);
 
