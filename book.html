@@ -1,137 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Abhijat E-Book</title>
-  <style>
-    /* === Reset === */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abhijat E-Diwali 2025 - Book</title>
+<style>
+html, body {
+  height:100%; width:100%; margin:0; padding:0; overflow:hidden;
+  display:flex; justify-content:center; align-items:center; background:#fff;
+}
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #121212;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-    }
+iframe {
+  width:100%;
+  height:100%;
+  border:none;
+}
 
-    /* === Container === */
-    .pdf-container {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* === PDF Frame === */
-    .pdf-frame {
-      width: 100%;
-      height: 85vh; /* main view */
-      border: none;
-      display: block;
-    }
-
-    /* === Controls Bar === */
-    .pdf-controls {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.85);
-      padding: 10px 0;
-      z-index: 999;
-    }
-
-    .pdf-controls button {
-      background-color: #6C63FF;
-      color: #fff;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-
-    .pdf-controls button:hover {
-      background-color: #5848f4;
-    }
-
-    /* === Mobile Responsive === */
-    @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-
-      .pdf-frame {
-        height: 80vh;
-      }
-
-      .pdf-controls {
-        padding: 8px 0;
-      }
-
-      .pdf-controls button {
-        font-size: 14px;
-        padding: 8px 12px;
-      }
-    }
-  </style>
+#prevPage, #nextPage {
+  position:absolute; bottom:20px; padding:6px 12px; font-size:0.85rem;
+  border:none; border-radius:4px; background:#f39c12; color:#fff; cursor:pointer; z-index:20;
+}
+#prevPage:hover, #nextPage:hover { background:#d35400; }
+#prevPage { left:15px; } #nextPage { right:15px; }
+</style>
 </head>
 <body>
 
-  <!-- === PDF Container === -->
-  <div class="pdf-container">
-    <iframe
-      id="pdfViewer"
-      class="pdf-frame"
-      src="AbhijatFinalPdf.pdf"
-      title="Abhijat E-Book">
-    </iframe>
+<iframe id="pdfViewer" src="book-pages/AbhijatFinalPdf.pdf#page=1" allowfullscreen></iframe>
 
-    <!-- === Fixed Buttons (Always visible) === -->
-    <div class="pdf-controls">
-      <button id="prevBtn">Previous</button>
-      <button id="nextBtn">Next</button>
-    </div>
-  </div>
+<button id="prevPage">Prev</button>
+<button id="nextPage">Next</button>
 
-  <!-- === Script Section === -->
-  <script>
-    // Example script (if you plan multi-page PDF navigation manually)
-    let currentPage = 1;
-    const totalPages = 2; // Change according to your PDF pages
+<script>
+const pdfIframe = document.getElementById('pdfViewer');
+let currentPage = 1;
 
-    const pdfViewer = document.getElementById("pdfViewer");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
+// PDF total pages (optional, if you know total pages you can limit)
+let totalPages = 50; // Change to your PDF total pages
 
-    // Button click logic (simulate changing pages)
-    prevBtn.addEventListener("click", () => {
-      if (currentPage > 1) {
-        currentPage--;
-        pdfViewer.src = `AbhijatFinalPdf.pdf#page=${currentPage}`;
-      }
-    });
+const updateIframePage = () => {
+  pdfIframe.src = `book-pages/AbhijatFinalPdf.pdf#page=${currentPage}`;
+}
 
-    nextBtn.addEventListener("click", () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        pdfViewer.src = `AbhijatFinalPdf.pdf#page=${currentPage}`;
-      }
-    });
-  </script>
+document.getElementById('prevPage').addEventListener('click', () => {
+  if(currentPage > 1) {
+    currentPage--;
+    updateIframePage();
+  }
+});
+
+document.getElementById('nextPage').addEventListener('click', () => {
+  if(currentPage < totalPages) {
+    currentPage++;
+    updateIframePage();
+  }
+});
+</script>
 
 </body>
 </html>
