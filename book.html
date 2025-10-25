@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Abhijat E-Book</title>
+
   <style>
     * {
       margin: 0;
@@ -12,13 +13,13 @@
     }
 
     body {
+      font-family: "Poppins", sans-serif;
       background: #121212;
       color: #fff;
-      font-family: "Poppins", sans-serif;
-      height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      height: 100vh;
+      overflow: hidden;
     }
 
     iframe {
@@ -31,10 +32,11 @@
       display: flex;
       justify-content: space-around;
       align-items: center;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       padding: 10px 0;
       position: sticky;
       bottom: 0;
+      z-index: 10;
     }
 
     button {
@@ -60,20 +62,21 @@
     }
   </style>
 </head>
+
 <body>
-  <!-- PDF viewer -->
+  <!-- PDF VIEWER -->
   <iframe id="pdfViewer" src="AbhijatFinalPdf.pdf#page=1"></iframe>
 
-  <!-- Navigation buttons -->
+  <!-- FIXED CONTROLS -->
   <div class="controls">
     <button id="prevBtn">Previous</button>
     <button id="nextBtn">Next</button>
   </div>
 
   <script>
-    // Simple navigation for multi-page PDF
+    // PDF Navigation Script
     let currentPage = 1;
-    const totalPages = 2; // change this to your total pages
+    const totalPages = 2; // Change this if PDF has more pages
     const viewer = document.getElementById("pdfViewer");
 
     document.getElementById("prevBtn").onclick = () => {
