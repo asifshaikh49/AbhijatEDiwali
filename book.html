@@ -117,58 +117,62 @@
 </body>
 </html> -->
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abhijat Final PDF Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
 <style>
   * {
     box-sizing: border-box;
   }
 
-  html, body {
+  body {
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    overflow-x: hidden; /* 🚫 Prevent horizontal scroll */
-    font-family: Arial, sans-serif;
-    background: #f8f9fa;
-  }
-
-  body {
+    background: #fff;
     display: flex;
     flex-direction: column;
-    align-items: center;
     min-height: 100vh;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: hidden; /* ✅ No side scroll */
   }
 
   h2#welcomeText {
     text-align: center;
     color: #222;
-    padding: 15px;
+    padding: 12px;
+    margin-top: 10px;
     font-size: 1.5rem;
-    margin: 10px 0;
   }
 
-  /* ✅ Center and contain PDF properly */
   #pdf-container {
-    width: 100%;
+    width: 95%;
     max-width: 900px;
-    margin: 0 auto;
-    border: 1px solid #ddd;
+    margin: 10px auto 0;
+    border: 1px solid #ccc;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: #fff;
-    border-radius: 8px;
     overflow: hidden;
+    border-radius: 8px;
+    background: #fff;
   }
 
-  /* ✅ Canvas fits exactly, no overflow */
   canvas {
     display: block;
-    width: 100% !important;
-    height: auto !important;
+    width: 100%;
+    height: auto;
     margin: 0 auto;
-    max-width: 100%;
   }
 
   .btns {
+    width: 100%;
     text-align: center;
-    margin: 20px 0 30px;
+    margin: 15px 0 25px;
   }
 
   button {
@@ -191,12 +195,99 @@
     h2#welcomeText {
       font-size: 1.2rem;
     }
+
     button {
-      font-size: 0.9rem;
       padding: 8px 14px;
+      font-size: 0.9rem;
     }
+
     #pdf-container {
       width: 95%;
     }
   }
 </style>
+</head>
+<body>
+
+<h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
+<div id="pdf-container"></div>
+
+<div class="btns">
+  <button id="prev">⬅️ Previous</button>
+  <button id="next">Next ➡️</button>
+</div>
+
+<script>
+  // ✅ Setup PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+  const pdfList = ["book-pages/AbhijatFinalPdf.pdf"];
+  let currentPage = 1;
+  let pdfDoc = null;
+  const container = document.getElementById("pdf-container");
+
+  async function loadPDF() {
+    pdfDoc = await pdfjsLib.getDocument(pdfList[0]).promise;
+    currentPage = 1;
+    renderPage(currentPage);
+  }
+
+  async function renderPage(pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+
+    // ✅ Scale the PDF according to device pixel ratio for clarity
+    const containerWidth = container.clientWidth;
+    const viewport = page.getViewport({ scale: 1 });
+    const scale = containerWidth / viewport.width;
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const scaledViewport = page.getViewport({ scale: scale * devicePixelRatio });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+
+    // Display it in normal size (not zoomed)
+    canvas.style.width = `${scaledViewport.width / devicePixelRatio}px`;
+    canvas.style.height = `${scaledViewport.height / devicePixelRatio}px`;
+
+    container.innerHTML = "";
+    container.appendChild(canvas);
+
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: scaledViewport,
+    };
+
+    await page.render(renderContext).promise;
+
+    document.getElementById("welcomeText").innerText = `Page ${pageNum} of ${pdfDoc.numPages}`;
+  }
+
+  document.getElementById("prev").addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderPage(currentPage);
+    }
+  });
+
+  document.getElementById("next").addEventListener("click", () => {
+    if (currentPage < pdfDoc.numPages) {
+      currentPage++;
+      renderPage(currentPage);
+    } else {
+      alert("🎉 You've reached the end of the book!");
+    }
+  });
+
+  // Reload on resize for responsiveness
+  window.addEventListener("resize", () => renderPage(currentPage));
+
+  // Load the PDF
+  loadPDF();
+</script>
+
+</body>
+</html>
