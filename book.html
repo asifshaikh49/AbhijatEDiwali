@@ -120,12 +120,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Abhijat Final PDF Viewer</title>
+
+<!-- Load PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
 <style>
-  /* ===== GLOBAL STYLES ===== */
   * {
     box-sizing: border-box;
   }
@@ -134,52 +136,48 @@
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background: #fafafa;
+    background: #f9f9f9;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     align-items: center;
     justify-content: flex-start;
+    min-height: 100vh;
   }
 
   h2#welcomeText {
     text-align: center;
     color: #222;
     padding: 15px;
-    font-size: 1.4rem;
+    margin-top: 10px;
   }
 
-  /* ===== PDF CONTAINER ===== */
   #pdf-container {
     width: 95%;
     max-width: 900px;
-    flex: 1;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    border-radius: 8px;
-    background: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #fff;
+    margin-bottom: 15px;
+    border-radius: 6px;
     overflow: hidden;
-    margin-bottom: 10px;
   }
 
   canvas {
+    display: block;
     width: 100%;
     height: auto;
-    display: block;
   }
 
-  /* ===== BUTTON SECTION ===== */
   .btns {
-    width: 100%;
     text-align: center;
-    margin: 15px 0;
+    margin-bottom: 20px;
   }
 
   button {
     padding: 10px 20px;
     border: none;
     background: #007bff;
-    color: #fff;
+    color: white;
     border-radius: 6px;
     cursor: pointer;
     margin: 0 8px;
@@ -191,100 +189,99 @@
     background: #0056b3;
   }
 
-  /* ===== RESPONSIVE DESIGN ===== */
   @media (max-width: 600px) {
-    h2#welcomeText {
-      font-size: 1.2rem;
-      padding: 10px;
-    }
     button {
       font-size: 0.9rem;
-      padding: 8px 15px;
-    }
-    #pdf-container {
-      width: 98%;
+      padding: 8px 14px;
     }
   }
 </style>
 </head>
 <body>
+  <h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
+  <div id="pdf-container"></div>
 
-<h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
-<div id="pdf-container"></div>
+  <div class="btns">
+    <button id="prev">⬅️ Previous</button>
+    <button id="next">Next ➡️</button>
+  </div>
 
-<div class="btns">
-  <button id="prev">⬅️ Previous</button>
-  <button id="next">Next ➡️</button>
-</div>
+  <script>
+    // ✅ Configure PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
-<script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    // ✅ Path to your PDF file
+    const pdfPath = "book-pages/AbhijatFinalPdf.pdf";
 
-  const pdfPath = "book-pages/AbhijatFinalPdf.pdf";
-  let currentPage = 1;
-  let pdfDoc = null;
-  const container = document.getElementById("pdf-container");
+    let pdfDoc = null;
+    let currentPage = 1;
+    const container = document.getElementById("pdf-container");
 
-  async function loadPDF() {
-    pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
-    renderPage(currentPage);
-  }
-
-  async function renderPage(pageNum) {
-    const page = await pdfDoc.getPage(pageNum);
-    const containerWidth = container.clientWidth;
-
-    // Adjust scale dynamically based on screen size and pixel ratio
-    const viewport = page.getViewport({ scale: 1 });
-    const pixelRatio = window.devicePixelRatio || 1;
-    const scale = (containerWidth / viewport.width) * pixelRatio;
-    const scaledViewport = page.getViewport({ scale });
-
-    // Create and setup canvas
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    canvas.width = scaledViewport.width;
-    canvas.height = scaledViewport.height;
-    canvas.style.width = "100%";
-    canvas.style.height = "auto";
-
-    // Clear old canvas and render new
-    container.innerHTML = "";
-    container.appendChild(canvas);
-
-    await page.render({
-      canvasContext: ctx,
-      viewport: scaledViewport,
-    }).promise;
-
-    document.getElementById("welcomeText").innerText =
-      `Page ${pageNum} of ${pdfDoc.numPages}`;
-  }
-
-  // Navigation buttons
-  document.getElementById("prev").addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderPage(currentPage);
+    // ✅ Load and render PDF
+    async function loadPDF() {
+      try {
+        pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
+        console.log("PDF loaded successfully ✅");
+        renderPage(currentPage);
+      } catch (error) {
+        console.error("Error loading PDF:", error);
+        container.innerHTML = `<p style="color:red; text-align:center; padding:20px;">
+          ❌ Unable to load PDF. Check the file path: <b>${pdfPath}</b>
+        </p>`;
+      }
     }
-  });
 
-  document.getElementById("next").addEventListener("click", () => {
-    if (currentPage < pdfDoc.numPages) {
-      currentPage++;
-      renderPage(currentPage);
-    } else {
-      alert("🎉 You've reached the end of the book!");
+    // ✅ Render specific page
+    async function renderPage(pageNum) {
+      try {
+        const page = await pdfDoc.getPage(pageNum);
+        const containerWidth = container.clientWidth;
+
+        const viewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / viewport.width;
+        const scaledViewport = page.getViewport({ scale });
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = scaledViewport.width;
+        canvas.height = scaledViewport.height;
+        container.innerHTML = "";
+        container.appendChild(canvas);
+
+        await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+
+        document.getElementById("welcomeText").innerText =
+          `Page ${pageNum} of ${pdfDoc.numPages}`;
+      } catch (error) {
+        console.error("Error rendering page:", error);
+      }
     }
-  });
 
-  // Reload page on resize (for responsive re-scaling)
-  window.addEventListener("resize", () => renderPage(currentPage));
+    // ✅ Navigation
+    document.getElementById("prev").addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderPage(currentPage);
+      }
+    });
 
-  loadPDF();
-</script>
+    document.getElementById("next").addEventListener("click", () => {
+      if (currentPage < pdfDoc.numPages) {
+        currentPage++;
+        renderPage(currentPage);
+      } else {
+        alert("🎉 You've reached the end of the book!");
+      }
+    });
 
+    // ✅ Handle window resizing (for responsiveness)
+    window.addEventListener("resize", () => {
+      if (pdfDoc) renderPage(currentPage);
+    });
+
+    // ✅ Start loading the PDF
+    loadPDF();
+  </script>
 </body>
 </html>
-
