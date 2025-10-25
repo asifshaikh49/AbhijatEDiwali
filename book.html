@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abhijat Final PDF Viewer</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    padding:0;
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+    align-items:center;
+    justify-content:center;
+  }
+  h2#welcomeText {
+    text-align:center;
+    color:#222;
+    padding:10px;
+  }
+  #pdf-container {
+    flex:1;
+    width:90%;
+    max-width:900px;
+    margin:0 auto;
+    border:1px solid #ccc;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    overflow:hidden;
+    position:relative;
+  }
+  canvas { width:100%; display:block; margin:0 auto; }
+  .btns {
+    width:100%;
+    text-align:center;
+    margin-top:10px;
+  }
+  button {
+    padding:10px 20px;
+    border:none;
+    background:#007bff;
+    color:#fff;
+    border-radius:6px;
+    cursor:pointer;
+    margin:0 5px;
+  }
+  button:hover { background:#0056b3; }
+</style>
+</head>
+<body>
+
+<h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
+<div id="pdf-container"></div>
+<div class="btns">
+  <button id="prev">⬅️ Previous</button>
+  <button id="next">Next ➡️</button>
+</div>
+
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+  const pdfList = ["book-pages/AbhijatFinalPdf.pdf"];
+  let currentPage = 1;
+  let pdfDoc = null;
+  const container = document.getElementById("pdf-container");
+
+  async function loadPDF() {
+    pdfDoc = await pdfjsLib.getDocument(pdfList[0]).promise;
+    currentPage = 1;
+    renderPage(currentPage);
+  }
+
+  async function renderPage(pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
+    const viewport = page.getViewport({scale:1});
+    const containerWidth = container.clientWidth;
+    const scale = containerWidth / viewport.width;
+    const scaledViewport = page.getViewport({scale});
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = scaledViewport.width;
+    canvas.height = scaledViewport.height;
+
+    container.innerHTML = "";
+    container.appendChild(canvas);
+    await page.render({canvasContext: ctx, viewport: scaledViewport}).promise;
+
+    document.getElementById("welcomeText").innerText = `Page ${pageNum} of ${pdfDoc.numPages}`;
+  }
+
+  document.getElementById("prev").addEventListener("click", ()=> {
+    if(currentPage > 1) {
+      currentPage--;
+      renderPage(currentPage);
+    }
+  });
+
+  document.getElementById("next").addEventListener("click", ()=> {
+    if(currentPage < pdfDoc.numPages) {
+      currentPage++;
+      renderPage(currentPage);
+    } else {
+      alert("🎉 You've reached the end of the book!");
+    }
+  });
+
+  loadPDF();
+  window.addEventListener("resize", ()=> renderPage(currentPage));
+</script>
+
+</body>
+</html>
