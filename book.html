@@ -310,18 +310,18 @@
   html, body {
     margin: 0;
     padding: 0;
-    overflow-x: hidden; /* ✅ Prevent horizontal scrolling */
-    overflow-y: auto;  /* Allow only vertical scroll if needed */
+    overflow-x: hidden; /* ✅ Prevent horizontal scroll */
+    overflow-y: auto;   /* Allow vertical scroll only if needed */
     font-family: Arial, sans-serif;
-    background: #fff;
+    background: #f8f9fa;
   }
 
   body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-height: 100vh;
     justify-content: flex-start;
+    min-height: 100vh;
   }
 
   h2#welcomeText {
@@ -333,13 +333,12 @@
   }
 
   #pdf-container {
-    flex: 1;
-    width: 90%;
+    width: 100%;
     max-width: 900px;
     margin: 0 auto;
     border: 1px solid #ccc;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* ✅ Prevent internal scrollbars */
+    overflow: hidden;
     background: #fff;
     border-radius: 8px;
   }
@@ -415,13 +414,21 @@
 
   async function renderPage(pageNum) {
     const page = await pdfDoc.getPage(pageNum);
+
+    // Container width for scaling
+    const containerWidth = container.clientWidth;
     const viewport = page.getViewport({ scale: 1 });
 
-    const containerWidth = container.clientWidth;
+    // Calculate scale to fit width perfectly
     const scale = containerWidth / viewport.width;
+
+    // High DPI rendering for clarity (especially mobile)
     const devicePixelRatio = window.devicePixelRatio || 1;
 
-    const scaledViewport = page.getViewport({ scale: scale * devicePixelRatio });
+    // ✅ Slightly reduce scale to prevent scrollbar at 100% zoom
+    const adjustedScale = scale * devicePixelRatio * 0.98;
+
+    const scaledViewport = page.getViewport({ scale: adjustedScale });
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -429,7 +436,7 @@
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
 
-    // ✅ Match display size properly to prevent any scroll
+    // Set visual (CSS) size so it fits the screen perfectly
     canvas.style.width = `${scaledViewport.width / devicePixelRatio}px`;
     canvas.style.height = `${scaledViewport.height / devicePixelRatio}px`;
 
@@ -445,6 +452,7 @@
       `Page ${pageNum} of ${pdfDoc.numPages}`;
   }
 
+  // Navigation Buttons
   document.getElementById("prev").addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
@@ -461,6 +469,7 @@
     }
   });
 
+  // Rerender on resize to stay perfectly fitted
   window.addEventListener("resize", () => renderPage(currentPage));
 
   loadPDF();
