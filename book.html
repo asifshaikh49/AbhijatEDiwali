@@ -297,8 +297,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Abhijat Final PDF Viewer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 
@@ -308,60 +308,66 @@
   }
 
   body {
-    font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    font-family: Arial, sans-serif;
     background: #fff;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     align-items: center;
-    overflow-x: hidden; /* ✅ Prevents horizontal scroll */
-    overflow-y: auto;   /* ✅ Normal vertical scroll if needed */
+    overflow-x: hidden;
   }
 
   h2#welcomeText {
     text-align: center;
     color: #222;
-    padding: 12px;
+    padding: 12px 8px;
     margin: 10px 0;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   #pdf-container {
-    flex: 1;
     width: 95%;
     max-width: 900px;
     margin: 0 auto;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
     background: #fff;
-    border-radius: 8px;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px 8px 0 0; /* ✅ Rounded only top corners */
+    overflow: hidden;
   }
 
   canvas {
     display: block;
     width: 100%;
     height: auto;
-    margin: 0 auto;
+    margin: 0;
+    padding: 0;
   }
 
+  /* ✅ Buttons directly below PDF */
   .btns {
-    width: 100%;
-    text-align: center;
-    margin: 10px 0 10px; /* ✅ reduced bottom margin */
-    padding-bottom: 0;   /* ✅ ensures no extra space */
+    width: 95%;
+    max-width: 900px;
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    border-top: none; /* ✅ Connect seamlessly with PDF */
+    border-radius: 0 0 8px 8px; /* ✅ Rounded only bottom corners */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin: 0 auto 15px; /* Small space below */
   }
 
   button {
-    padding: 10px 20px;
+    padding: 10px 18px;
     border: none;
     background: #007bff;
     color: #fff;
     border-radius: 6px;
     cursor: pointer;
-    margin: 0 5px;
     font-size: 1rem;
     transition: background 0.3s ease;
   }
@@ -370,22 +376,34 @@
     background: #0056b3;
   }
 
+  /* ✅ Mobile styling */
   @media (max-width: 600px) {
     h2#welcomeText {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      margin: 8px 0;
     }
-    button {
-      padding: 8px 14px;
-      font-size: 0.9rem;
-    }
+
     #pdf-container {
       width: 100%;
-      border-radius: 0; /* ✅ looks cleaner on small screens */
       border: none;
       box-shadow: none;
+      border-radius: 0;
     }
+
     .btns {
-      margin-bottom: 0; /* ✅ removes bottom gap completely */
+      width: 100%;
+      border: none;
+      border-radius: 0;
+      background: #fff;
+      padding: 8px 0;
+      margin: 0;
+      gap: 8px;
+    }
+
+    button {
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      border-radius: 5px;
     }
   }
 </style>
@@ -396,23 +414,23 @@
 
 <div id="pdf-container"></div>
 
+<!-- ✅ Buttons now visually attached to PDF -->
 <div class="btns">
   <button id="prev">⬅️ Previous</button>
   <button id="next">Next ➡️</button>
 </div>
 
 <script>
-  // ✅ Use latest PDF.js worker
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
-  const pdfList = ["book-pages/AbhijatFinalPdf.pdf"];
+  const pdfPath = "book-pages/AbhijatFinalPdf.pdf";
   let currentPage = 1;
   let pdfDoc = null;
   const container = document.getElementById("pdf-container");
 
   async function loadPDF() {
-    pdfDoc = await pdfjsLib.getDocument(pdfList[0]).promise;
+    pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
     currentPage = 1;
     renderPage(currentPage);
   }
@@ -420,33 +438,23 @@
   async function renderPage(pageNum) {
     const page = await pdfDoc.getPage(pageNum);
     const viewport = page.getViewport({ scale: 1 });
-
     const containerWidth = container.clientWidth;
     const scale = containerWidth / viewport.width;
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio || 1;
 
-    // ✅ High-resolution viewport for clear rendering
-    const scaledViewport = page.getViewport({ scale: scale * devicePixelRatio });
-
+    const scaledViewport = page.getViewport({ scale: scale * dpr });
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
-    // ✅ Set higher resolution canvas size
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
-
-    // ✅ Display size (not zoomed)
-    canvas.style.width = `${scaledViewport.width / devicePixelRatio}px`;
-    canvas.style.height = `${scaledViewport.height / devicePixelRatio}px`;
+    canvas.style.width = `${scaledViewport.width / dpr}px`;
+    canvas.style.height = `${scaledViewport.height / dpr}px`;
 
     container.innerHTML = "";
     container.appendChild(canvas);
 
-    const renderContext = {
-      canvasContext: ctx,
-      viewport: scaledViewport,
-    };
-
+    const renderContext = { canvasContext: ctx, viewport: scaledViewport };
     await page.render(renderContext).promise;
 
     document.getElementById("welcomeText").innerText =
@@ -469,10 +477,8 @@
     }
   });
 
-  // ✅ Rerender on window resize for responsiveness
   window.addEventListener("resize", () => renderPage(currentPage));
 
-  // Load the first PDF
   loadPDF();
 </script>
 
