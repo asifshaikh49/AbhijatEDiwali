@@ -299,95 +299,62 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>Abhijat Final PDF Viewer</title>
+<title>Abhijat PDF Viewer with Scroll</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-  /* Reset */
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #fff; font-family: Arial, sans-serif; }
+  body { display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
 
-  html, body {
-    height: 100%;
-    background: #fff;
-    -webkit-text-size-adjust: 100%;
-    font-family: Arial, sans-serif;
-  }
-
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow-x: hidden;
-    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  }
-
-  /* Page header */
   h2#welcomeText {
-    width: 100%;
-    text-align: center;
-    padding: 12px 14px;
-    color: #222;
-    font-size: 1.2rem;
-    background: #fff;
+    width: 100%; text-align: center; padding: 12px 14px;
+    color: #222; font-size: 1.2rem; background: #fff;
   }
 
-  /* The whole viewer (PDF + buttons) is one card so no gap appears */
   .viewer {
-    width: 95%;
-    max-width: 900px;
-    background: #ffffff;
-    border-radius: 10px;
-    overflow: hidden;            /* important: hides any tiny overflow */
-    border: 1px solid rgba(0,0,0,0.08);
+    width: 95%; max-width: 900px; background: #fff;
+    border-radius: 10px; border:1px solid rgba(0,0,0,0.08);
     box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-    margin-bottom: 14px;
+    display: flex; flex-direction: column; margin-bottom: 14px;
   }
 
-  /* PDF area */
+  /* Scrollable PDF container */
   #pdf-container {
     width: 100%;
-    /* don't set explicit height here; canvas will size itself */
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    max-height: 80vh;    /* limit height */
+    overflow-y: auto;    /* vertical scroll */
     background: #fff;
+    display: flex;
+    justify-content: center;
   }
 
-  /* ensure canvas behaves */
   canvas {
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    margin: 0 !important;
-    padding: 0;
+    display: block;
+    width: 100%;   /* scale width to container */
+    height: auto;  /* keep aspect ratio, natural height can exceed container */
   }
 
-  /* controls are visually attached — border-top removed because viewer already has border */
   .controls {
     width: 100%;
     display: flex;
     justify-content: center;
     gap: 12px;
-    background: #f8f9fa;
     padding: 10px;
+    background: #f8f9fa;
   }
 
   .controls button {
-    padding: 10px 18px;
-    border: none;
-    background: #007bff;
-    color: #fff;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
+    padding: 10px 18px; border: none; background: #007bff; color: #fff;
+    border-radius: 6px; cursor: pointer; font-size: 1rem;
   }
   .controls button:active { transform: translateY(1px); }
 
-  /* Mobile tweaks */
   @media (max-width:600px) {
     .viewer { width: 100%; max-width: none; border-radius: 0; box-shadow: none; border-left: none; border-right: none; }
     h2#welcomeText { font-size: 1.05rem; padding: 10px; }
-    .controls { padding: 9px; gap: 8px; background: #fff; }
+    .controls { padding: 9px; gap: 8px; }
     .controls button { padding: 12px 16px; font-size: 0.95rem; border-radius: 5px; }
+    #pdf-container { max-height: 75vh; }
   }
 </style>
 </head>
@@ -395,124 +362,67 @@
 
 <h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
 
-<!-- viewer wraps pdf + controls so they appear glued together -->
-<div class="viewer" role="region" aria-label="PDF viewer">
-  <div id="pdf-container" aria-live="polite"></div>
+<div class="viewer">
+  <div id="pdf-container"></div>
 
-  <div class="controls" role="toolbar" aria-label="PDF navigation">
-    <button id="prev" aria-label="Previous page">⬅️ Previous</button>
-    <button id="next" aria-label="Next page">Next ➡️</button>
+  <div class="controls">
+    <button id="prev">⬅️ Previous</button>
+    <button id="next">Next ➡️</button>
   </div>
 </div>
 
 <script>
-  // pdf.js worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  const PDF_URL = 'book-pages/AbhijatFinalPdf.pdf'; // your PDF path
-  let pdfDoc = null;
-  let currentPage = 1;
-  const container = document.getElementById('pdf-container');
-  const header = document.getElementById('welcomeText');
+const PDF_URL = 'book-pages/AbhijatFinalPdf.pdf';
+let pdfDoc = null;
+let currentPage = 1;
+const container = document.getElementById('pdf-container');
+const header = document.getElementById('welcomeText');
 
-  // Utility: remove whitespace text nodes inside container (some browsers insert them)
-  function cleanContainerWhitespace() {
-    for (let i = container.childNodes.length - 1; i >= 0; i--) {
-      const n = container.childNodes[i];
-      if (n.nodeType === Node.TEXT_NODE && !/\S/.test(n.nodeValue)) container.removeChild(n);
-    }
-  }
+async function loadPDF() {
+  pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
+  currentPage = 1;
+  await renderPage(currentPage);
+}
 
-  async function loadPDF() {
-    try {
-      pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
-      currentPage = 1;
-      await renderPage(currentPage);
-    } catch (err) {
-      console.error(err);
-      container.textContent = 'Failed to load PDF.';
-    }
-  }
+async function renderPage(pageNum) {
+  const page = await pdfDoc.getPage(pageNum);
 
-  async function renderPage(pageNum) {
-    if (!pdfDoc) return;
-    const page = await pdfDoc.getPage(pageNum);
+  const containerWidth = container.clientWidth;
 
-    // natural viewport
-    const natural = page.getViewport({ scale: 1 });
-    const containerWidth = container.clientWidth;
-    const scale = containerWidth / natural.width;
-    const dpr = window.devicePixelRatio || 1;
+  // Scale by width only → canvas can be taller than container
+  const viewport = page.getViewport({ scale: containerWidth / page.getViewport({scale:1}).width });
 
-    // choose scale for crisp rendering
-    const renderViewport = page.getViewport({ scale: scale * dpr });
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
 
-    // create canvas
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
 
-    canvas.width = renderViewport.width;
-    canvas.height = renderViewport.height;
+  container.innerHTML = '';
+  container.appendChild(canvas);
 
-    // set display size (scaled down by dpr)
-    canvas.style.width = (renderViewport.width / dpr) + 'px';
-    canvas.style.height = (renderViewport.height / dpr) + 'px';
-    canvas.style.display = 'block';
-    canvas.style.margin = '0';
+  await page.render({ canvasContext: ctx, viewport }).promise;
 
-    // clear and append
-    container.innerHTML = '';
-    container.appendChild(canvas);
+  header.textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
+}
 
-    // extra cleanup to avoid stray nodes
-    cleanContainerWhitespace();
+document.getElementById('prev').addEventListener('click', async () => {
+  if (currentPage > 1) { currentPage--; await renderPage(currentPage); container.scrollTop = 0; }
+});
+document.getElementById('next').addEventListener('click', async () => {
+  if (currentPage < pdfDoc.numPages) { currentPage++; await renderPage(currentPage); container.scrollTop = 0; }
+  else { alert("🎉 You've reached the end of the book!"); }
+});
 
-    // render
-    await page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
+// Re-render on resize
+window.addEventListener('resize', () => { if(pdfDoc) renderPage(currentPage); });
 
-    // some mobile browsers may briefly paint background — ensure viewer background covers it
-    // update header
-    header.textContent = `Page ${pageNum} of ${pdfDoc.numPages}`;
-    // ensure controls remain directly below visually (force repaint)
-    requestAnimationFrame(() => {
-      // small no-op to force layout and avoid sub-pixel gap
-      container.style.transform = 'translateZ(0)';
-      setTimeout(()=> container.style.transform = '', 50);
-    });
-  }
-
-  document.getElementById('prev').addEventListener('click', async () => {
-    if (!pdfDoc) return;
-    if (currentPage > 1) {
-      currentPage--;
-      await renderPage(currentPage);
-    }
-  });
-
-  document.getElementById('next').addEventListener('click', async () => {
-    if (!pdfDoc) return;
-    if (currentPage < pdfDoc.numPages) {
-      currentPage++;
-      await renderPage(currentPage);
-    } else {
-      alert("🎉 You've reached the end of the book!");
-    }
-  });
-
-  // re-render on resize/orientation to adapt scale
-  let resizeTimer;
-  function onResize() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      if (pdfDoc) renderPage(currentPage).catch(e => console.error(e));
-    }, 120);
-  }
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', onResize);
-
-  // initial load (tiny timeout helps with mobile UI chrome)
-  setTimeout(loadPDF, 60);
+setTimeout(loadPDF, 50);
 </script>
+
 </body>
 </html>
-
