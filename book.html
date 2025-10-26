@@ -297,43 +297,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Abhijat Final PDF Viewer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-
 <style>
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
+  html, body {
+    height: 100%;
     background: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    font-family: Arial, sans-serif;
     overflow-x: hidden;
   }
 
-  h2#welcomeText {
-    text-align: center;
-    color: #222;
-    padding: 12px 8px;
-    margin: 10px 0;
-    font-size: 1.4rem;
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
   }
 
-  #pdf-container {
+  h2#welcomeText {
+    width: 100%;
+    text-align: center;
+    padding: 12px 14px;
+    color: #222;
+    font-size: 1.2rem;
+    background: #fff;
+  }
+
+  .viewer {
     width: 95%;
     max-width: 900px;
-    margin: 0 auto;
     background: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px 8px 0 0; /* ✅ Rounded only top corners */
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.1);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    margin-bottom: 14px;
+  }
+
+  /* PDF display area with 3D perspective */
+  #pdf-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #fff;
+    position: relative;
+    perspective: 1000px;
     overflow: hidden;
   }
 
@@ -341,27 +354,37 @@
     display: block;
     width: 100%;
     height: auto;
-    margin: 0;
-    padding: 0;
+    backface-visibility: hidden;
   }
 
-  /* ✅ Buttons directly below PDF */
-  .btns {
-    width: 95%;
-    max-width: 900px;
-    background: #f8f9fa;
-    border: 1px solid #ccc;
-    border-top: none; /* ✅ Connect seamlessly with PDF */
-    border-radius: 0 0 8px 8px; /* ✅ Rounded only bottom corners */
+  /* Page flip animations */
+  .flip-out {
+    animation: flipOut 0.5s ease forwards;
+    transform-origin: left center;
+  }
+  .flip-in {
+    animation: flipIn 0.5s ease forwards;
+    transform-origin: right center;
+  }
+
+  @keyframes flipOut {
+    0% { transform: rotateY(0deg); opacity: 1; }
+    100% { transform: rotateY(-90deg); opacity: 0; }
+  }
+  @keyframes flipIn {
+    0% { transform: rotateY(90deg); opacity: 0; }
+    100% { transform: rotateY(0deg); opacity: 1; }
+  }
+
+  .controls {
     display: flex;
     justify-content: center;
-    align-items: center;
     gap: 10px;
-    padding: 10px;
-    margin: 0 auto 15px; /* Small space below */
+    background: #f8f9fa;
+    padding: 12px;
   }
 
-  button {
+  .controls button {
     padding: 10px 18px;
     border: none;
     background: #007bff;
@@ -372,39 +395,15 @@
     transition: background 0.3s ease;
   }
 
-  button:hover {
+  .controls button:hover {
     background: #0056b3;
   }
 
-  /* ✅ Mobile styling */
-  @media (max-width: 600px) {
-    h2#welcomeText {
-      font-size: 1.1rem;
-      margin: 8px 0;
-    }
-
-    #pdf-container {
-      width: 100%;
-      border: none;
-      box-shadow: none;
-      border-radius: 0;
-    }
-
-    .btns {
-      width: 100%;
-      border: none;
-      border-radius: 0;
-      background: #fff;
-      padding: 8px 0;
-      margin: 0;
-      gap: 8px;
-    }
-
-    button {
-      padding: 10px 14px;
-      font-size: 0.95rem;
-      border-radius: 5px;
-    }
+  @media (max-width:600px) {
+    .viewer { width: 100%; border-radius: 0; box-shadow: none; }
+    h2#welcomeText { font-size: 1rem; padding: 10px; }
+    .controls { gap: 8px; background: #fff; padding: 10px; }
+    .controls button { padding: 10px 14px; font-size: 0.9rem; }
   }
 </style>
 </head>
@@ -412,76 +411,96 @@
 
 <h2 id="welcomeText">Welcome to Abhijat Book 📖</h2>
 
-<div id="pdf-container"></div>
-
-<!-- ✅ Buttons now visually attached to PDF -->
-<div class="btns">
-  <button id="prev">⬅️ Previous</button>
-  <button id="next">Next ➡️</button>
+<div class="viewer">
+  <div id="pdf-container"></div>
+  <div class="controls">
+    <button id="prev">⬅️ Previous</button>
+    <button id="next">Next ➡️</button>
+  </div>
 </div>
 
 <script>
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-  const pdfPath = "book-pages/AbhijatFinalPdf.pdf";
-  let currentPage = 1;
+  const PDF_URL = 'book-pages/AbhijatFinalPdf.pdf';
   let pdfDoc = null;
-  const container = document.getElementById("pdf-container");
+  let currentPage = 1;
+  const container = document.getElementById('pdf-container');
+  const header = document.getElementById('welcomeText');
 
   async function loadPDF() {
-    pdfDoc = await pdfjsLib.getDocument(pdfPath).promise;
+    pdfDoc = await pdfjsLib.getDocument(PDF_URL).promise;
     currentPage = 1;
-    renderPage(currentPage);
+    renderPage(currentPage, false);
   }
 
-  async function renderPage(pageNum) {
+  async function renderPage(pageNum, animate = false, direction = 'next') {
     const page = await pdfDoc.getPage(pageNum);
     const viewport = page.getViewport({ scale: 1 });
     const containerWidth = container.clientWidth;
     const scale = containerWidth / viewport.width;
     const dpr = window.devicePixelRatio || 1;
-
     const scaledViewport = page.getViewport({ scale: scale * dpr });
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
 
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
     canvas.style.width = `${scaledViewport.width / dpr}px`;
     canvas.style.height = `${scaledViewport.height / dpr}px`;
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
 
-    container.innerHTML = "";
-    container.appendChild(canvas);
+    // if animating, handle transition
+    const oldCanvas = container.querySelector('canvas');
+    if (animate && oldCanvas) {
+      oldCanvas.classList.add(direction === 'next' ? 'flip-out' : 'flip-in');
+      container.appendChild(canvas);
 
-    const renderContext = { canvasContext: ctx, viewport: scaledViewport };
-    await page.render(renderContext).promise;
+      // animate new page appearing
+      canvas.classList.add(direction === 'next' ? 'flip-in' : 'flip-out');
 
-    document.getElementById("welcomeText").innerText =
-      `Page ${pageNum} of ${pdfDoc.numPages}`;
+      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+
+      // remove old after animation ends
+      setTimeout(() => {
+        if (oldCanvas && oldCanvas.parentNode) oldCanvas.remove();
+        canvas.classList.remove('flip-in', 'flip-out');
+      }, 500);
+    } else {
+      // no animation, direct replace
+      container.innerHTML = '';
+      container.appendChild(canvas);
+      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+    }
+
+    header.innerText = `Page ${pageNum} of ${pdfDoc.numPages}`;
   }
 
-  document.getElementById("prev").addEventListener("click", () => {
+  document.getElementById('prev').addEventListener('click', async () => {
     if (currentPage > 1) {
       currentPage--;
-      renderPage(currentPage);
+      renderPage(currentPage, true, 'prev');
     }
   });
 
-  document.getElementById("next").addEventListener("click", () => {
+  document.getElementById('next').addEventListener('click', async () => {
     if (currentPage < pdfDoc.numPages) {
       currentPage++;
-      renderPage(currentPage);
+      renderPage(currentPage, true, 'next');
     } else {
       alert("🎉 You've reached the end of the book!");
     }
   });
 
-  window.addEventListener("resize", () => renderPage(currentPage));
+  window.addEventListener('resize', () => renderPage(currentPage, false));
 
   loadPDF();
 </script>
 
 </body>
 </html>
+
 
